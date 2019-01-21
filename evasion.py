@@ -12,7 +12,7 @@ def creaWaypoints(p1, p2):
     #param p1: Coordenadas actuales del uav, ej: p1 = [-33.5201847,-70.7864960]
     #param p2: Coordenadas del waypoint siguiente en vuelo p2, ej = [-33.5201808,-70.7862814]
     #return: 3 waypoints evasivos con distancia configurada por usuario.
-
+    print("estoy en creaWaypoints......----------------") 
     p0 = [p1[0], p1[1]-1]  ## coordenada auxiliar para vector de eje coordenado
 
     v0 = np.array(p0) - np.array(p1)
@@ -82,6 +82,5 @@ def getHomeCoordinates(home_location):
 
     latitud = float(str(home_location).split(",")[-3].split("=")[1])
     longitud = float(str(home_location).split(",")[-2].split("=")[1])
-    print ("ingresaron bien las coordenadas del home")
+    print("estos son la lat y log del home")
     return [latitud,longitud]
-

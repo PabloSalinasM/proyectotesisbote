@@ -16,8 +16,6 @@ if not os.path.exists('logs'):
     os.mkdir('logs')
 logging.basicConfig(filename='logs/mission-'+str(datetime.date.today())+'.log', format='%(levelname)s - %(asctime)s: %(message)s', level=logging.DEBUG)
 
-file = open("sensor1.txt", "w")
-file.close()
 
 global Waypoints, NewWaypoint, enMision, distanciaAnewWayp, distanciaLlegadaWayp, modo, velocidadBote, actualAvoid, limiteBateria, modoAvoid, avoidDistancia, home,limite_distancia,limite_distancia2
 separador = "----------------"
@@ -59,15 +57,18 @@ def downloadMission(vehiculo):
 
 def getMission(vehiculo):
     # Descarga la mision cargada del vehiculo y carga parametros necesarios del codigo ;param vehiculo;return: numero_waypoints: cantidad de waypoints0
-
+   # archvwaypoint = open("waypoint.txt",'w')
     downloadMission(vehiculo)
     numeroWaypoints = 0
+   # archvwaypoint.write(str(waypoint))
     for waypoint in vehiculo.commands:
         mensj(waypoint, 0)
+      #  archvwaypoint.write(str(waypoint))
+      #  archvwaypoint.write("\n")
         Waypoints.append(waypoint)
         numeroWaypoints += 1
         print ("se agregaron los waypoint")
-
+   # archvvwaypoint.close()
     return numeroWaypoints
 
 def addHome(vehiculo):
@@ -169,32 +170,33 @@ baud_rate = 57600
 
 mensj("Iniciando conexion al vehiculo...",0)
 
-if len(sys.argv)> 1 and sys.argv[1] == "bote":
+#if len(sys.argv)> 1 and sys.argv[1] == "bote":
     #Inicia conexion con vehiculo real
-    mensj("Conexion con bote",0)
+mensj("Conexion con bote",0)
    # port = serial.Serial("/dev/ttyAMA0",baudrate=19200,timeout=0.2)
-    while True:
-        try:
+while True:
+    try:
+        
 	  #  print("entre aqui try")
            # mensj ("port read line %s" %str(port.readline()),0)
 	   # mensj("rcv %s:" % port,0)
            # if port.inWaiting()>0:
 	   #	data=port.readline()
 	   #	mensj("tagdetected:" + data,0)
-	    mensj("Realizando conexion a puerto %s" % connection,0)
-            vehiculo = connect(connection,baud=baud_rate, wait_ready= True)
+	mensj("Realizando conexion a puerto %s" % connection,0)
+        vehiculo = connect(connection,baud=baud_rate, wait_ready= True)
            # print("laserrr------------:%s"%str(vehiculo))
-	    print("despues de conectar al bote")
-	    break;
-        except Exception:
-            mensj("No se ha podido realizar conexion...Reintentando.",1)
-            time.sleep(3)
-else:
+	print("despues de conectar al bote")
+	break;
+    except Exception:
+        mensj("No se ha podido realizar conexion...Reintentando.",1)
+        time.sleep(3)
+#else:
     #inicia conexion con simulador por defecto
-    print ("antes de conectar al simulador")
-    mensj("Conexion con simulador.",0)
-    vehiculo = connect("udp:127.0.0.1:14551",wait_ready= True)
-    print ("despues de conectar al simulador")
+    #print ("antes de conectar al simulador")
+    #mensj("Conexion con simulador.",0)
+    #vehiculo = connect("udp:127.0.0.1:14551",wait_ready= True)
+    #print ("despues de conectar al simulador")
 #vehicle = connect('tcp:127.0.0.1:5762', wait_ready=True)
 
 # limpia la mision del vehiculo. En caso de iniciar conexion con vehiculo real,
@@ -207,6 +209,7 @@ evasion.avoidDistancia = avoidDistancia
 
 #   Funcionamiento Principal
 while True:
+    print("estoy en el while de los modos")
     if modo == 'INICIO':
         # Espera hasta que se cargue una mision en el vehiculo
         Waypoints = []
@@ -278,6 +281,8 @@ while True:
                 NewWaypointEv.append(waypointnew3)
                 print ("estoy en la evasion")
                 modoAvoid = "NORMAL"
+	    if sensors3.avoid2:
+                changeMode(vehiculo, "HOLD")
 	    else:
 	        mensj(separador,0)
 	        waypointnew1=[latitudActual,longitudActual]
@@ -299,20 +304,20 @@ while True:
 	print("entre al modo avoid verificar a q entro ---------------####")
         if enMision == 0:
 	        if len(NewWaypointEv) == 0:
-	      	        sensors3.clean_data()
+              	        sensors3.clean_data()
 			if modoAvoid == "BORDE":
-                	    mensj("Waypoint de mision alcanzado. Se actualiza siguiente waypoint", 0)
-                  	    vehiculo.commands.next = vehiculo.commands.next + 1
-                	if modoAvoid == "RTL":
-			    mensj("Waypoint de evasion RTL alcanzado. Se actualiza siguiente waypoint", 0)
-                   	    modo = "RTL"
-                   	    changeMode(vehiculo, "RTL")
-                	else:
-			    modo = "MISION"
-                   	    mensj("No quedan waypoints evasivos que recorrer. Se vuelve a modo MISSION", 0)
-                   	    changeMode(vehiculo, "AUTO")
-           	else:
-               	    actualAvoid = NewWaypointEv[0]
+                                mensj("Waypoint de mision alcanzado. Se actualiza siguiente waypoint", 0)
+                                vehiculo.commands.next = vehiculo.commands.next + 1
+                        if modoAvoid == "RTL":
+                                mensj("Waypoint de evasion RTL alcanzado. Se actualiza siguiente waypoint", 0)
+                                modo = "RTL"
+                                changeMode(vehiculo, "RTL")
+                        else:
+                                modo = "MISION"
+                                mensj("No quedan waypoints evasivos que recorrer. Se vuelve a modo MISSION", 0)
+                                changeMode(vehiculo, "AUTO")
+               	else:
+                    actualAvoid = NewWaypointEv[0]
                     wpLocation = dronekit.LocationGlobalRelative(NewWaypointEv[0][0], NewWaypointEv[0][1],vehiculo.location.global_relative_frame.alt)
                     vehiculo.simple_goto(wpLocation)
 		    print("estoy  avoid y en mision es 1")
@@ -320,37 +325,38 @@ while True:
                	    enMision = 1
                  # si Auxvar es = 1, ya se esta en modo avoid, por lo que no se carga uno nuevamente
                	    del NewWaypointEv[0]
-           	sensors1.clean_data()
+        	    sensors1.clean_data()
         else:
-		print(" estoy en el else de avoid de evasion enMision 1 y el valor de actual AVOID es %s" %actualAvoid)
-            	distanciaAnewWayp = evasion.distanciaEntre2Coor(
+             print(" estoy en el else de avoid de evasion enMision 1 y el valor de actual AVOID es %s" %actualAvoid)
+             distanciaAnewWayp = evasion.distanciaEntre2Coor(
                 [vehiculo.location.global_relative_frame.lat, vehiculo.location.global_relative_frame.lon],
                 actualAvoid)
 		#sensors1.clean_data()
-		sensors3.clean_data()
+	     sensors3.clean_data()
             	#sensors1.analize()
-		sensors3.analize()
-            	if sensors1.avoid or sensors3.avoid:
-                	changeMode(vehiculo, "HOLD")
+	     sensors3.analize()
+             if sensors1.avoid or sensors3.avoid:
+                 changeMode(vehiculo, "HOLD")
                 	# modo de evasion regular, entre 2 waypoints. Modo Regular
-               		mensj(separador, 0)
-                	mensj("Se realiza evasion regular de acuerdo a la distancia entre coordenadas", 0)
-                	mensj(separador, 0)
-                	actualAvoid =[vehiculo.location.global_relative_frame.lat, vehiculo.location.global_relative_frame.lon]
-                	NewWaypointEv.insert(0,actualAvoid)
-                	mensj("Nuevo waypoint a dirigirse en el modo evasion: %s" % str(wpLocation), 0)
-                	sensors1.clean_data()
-                	changeMode(vehiculo, "GUIDED")
-                	print("estoy en el else de mision 1 y en modo guided 2 ")
-			enMision = 0
-           	if distanciaAnewWayp < distanciaLlegadaWayp:
+                 mensj(separador, 0)
+                 mensj("Se realiza evasion regular de acuerdo a la distancia entre coordenadas", 0)
+                 mensj(separador, 0)
+                 actualAvoid =[vehiculo.location.global_relative_frame.lat, vehiculo.location.global_relative_frame.lon]
+                 NewWaypointEv.insert(0,actualAvoid)
+                 mensj("Nuevo waypoint a dirigirse en el modo evasion: %s" % str(wpLocation), 0)
+                 sensors1.clean_data()
+               	 changeMode(vehiculo, "GUIDED")
+                 print("estoy en el else de mision 1 y en modo guided 2 ")
+		 enMision = 0
+           	 if sensors3.avoid2:
+	                changeMode(vehiculo, "HOLD")
+           	 if distanciaAnewWayp < distanciaLlegadaWayp:
         	        enMision = 0
 
-            	mensj("WP restantes [ %i ] Distancia a WP Evasivo [ %s ]" % (
-            len(NewWaypointEv), str(distanciaAnewWayp)),
-                0)
+             mensj("WP restantes [ %i ] Distancia a WP Evasivo [ %s ]" % (
+             len(NewWaypointEv), str(distanciaAnewWayp)),0)
 
-        modo = checkBattery(vehiculo.battery.level, modo)
+             modo = checkBattery(vehiculo.battery.level, modo)
     elif modo == "RTL":
         # Modo Return to Launch, para regresar a home seteado por defecto. Tambien se realiza evasion de obstaculos en modo regular.
         coordenadasActuales = [vehiculo.location.global_relative_frame.lat, vehiculo.location.global_relative_frame.lon]
@@ -389,6 +395,8 @@ while True:
             changeMode(vehiculo, "GUIDED")
             sensors1.clean_data()
             modoAvoid = "RTL"
+        if sensors3.avoid2:
+            changeMode(vehiculo, "HOLD")
 	if str(evasion.distanciaEntre2Coor(coordenadasActuales,home))< 1.5:
 	    modo = 'INICIO'
 	    loop_time = 0.5
